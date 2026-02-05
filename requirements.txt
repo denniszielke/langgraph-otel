@@ -1,0 +1,12 @@
+
+python-dotenv==1.2.1
+langchain==1.2.8
+langchain-openai==1.1.7
+opentelemetry-instrumentation-langchain==0.52.1
+langgraph==1.0.7
+opentelemetry-distro[otlp]
+opentelemetry-api==1.39.1
+opentelemetry-sdk==1.39.1
+opentelemetry-exporter-otlp==1.39.1
+opentelemetry-exporter-otlp-proto-http==1.39.1
+opentelemetry-exporter-otlp-proto-grpc==1.39.1
