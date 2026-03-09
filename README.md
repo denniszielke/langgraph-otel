@@ -39,7 +39,7 @@ opentelemetry-bootstrap python app.py
 
 Create a `.env` file in the project root. Choose one of the configurations below based on your tracing backend.
 
-### Azure OpenAI (Required)
+### Azure OpenAI (Required for Options A and B)
 
 ```bash
 AZURE_OPENAI_API_KEY="your-api-key"
@@ -102,7 +102,43 @@ OTEL_SERVICE_NAME="otel-langgraph-demo"
 
 ---
 
+### Option C: Azure AI Foundry
+
+For Azure-native observability using Azure AI Foundry and Application Insights.
+
+See: https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-framework#configure-tracing-for-langchain-and-langgraph
+
+**Environment variables:**
+
+```bash
+APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=<key>;IngestionEndpoint=https://<region>.in.applicationinsights.azure.com/"
+AZURE_AI_FOUNDRY_ENDPOINT="https://<hub>.services.ai.azure.com/models"
+AZURE_AI_FOUNDRY_API_KEY="your-foundry-api-key"
+AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o-mini"
+OTEL_SERVICE_NAME="foundry-langgraph-demo"
+```
+
+**Optional:** To capture prompt and completion text in traces (useful for debugging):
+
+```bash
+AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED="true"
+```
+
+**To set up Azure AI Foundry tracing:**
+
+1. Create an **Azure AI Foundry** project in the Azure portal
+2. Navigate to your project's **Application Insights** resource to get the `APPLICATIONINSIGHTS_CONNECTION_STRING`
+3. Get your **Azure AI Foundry endpoint** from the project overview (format: `https://<hub>.services.ai.azure.com/models`)
+4. Generate an **API key** from your Azure AI Foundry project, or use `DefaultAzureCredential` for keyless authentication
+5. **View traces** in the Azure portal under your Application Insights resource → **Transaction search** or **End-to-end transaction details**
+
+---
+
 ## Run the Application
+
+Each tracing backend uses a dedicated application file. Set the required environment variables and run the corresponding file.
+
+### Run with Local Jaeger (Option A)
 
 ```bash
 # Azure OpenAI
@@ -110,18 +146,53 @@ export AZURE_OPENAI_API_KEY="<APIKEY>"
 export AZURE_OPENAI_ENDPOINT="https://<APIMENDPOINT>.azure-api.net"
 export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-5-mini"
 
-# OpenTelemetry
+# OpenTelemetry (Jaeger)
+export OTEL_SERVICE_NAME="otel-langgraph-demo"
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+
+python app.py
+```
+
+### Run with Grafana Cloud (Option B)
+
+```bash
+# Azure OpenAI
+export AZURE_OPENAI_API_KEY="<APIKEY>"
+export AZURE_OPENAI_ENDPOINT="https://<APIMENDPOINT>.azure-api.net"
+export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-5-mini"
+
+# OpenTelemetry (Grafana Cloud)
 export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
-export OTEL_EXPORTER_OTLP_ENDPOINT="https://otlp-gateway-dedicated-64-prod-eu-west-5.grafana.net/otlp"
+export OTEL_EXPORTER_OTLP_ENDPOINT="https://otlp-gateway-prod-<region>.grafana.net/otlp"
 export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic%20<ACCESSKEY>"
 export OTEL_SERVICE_NAME="otel-langgraph-demo"
 export OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.namespace=demo,service.version=1,service.instance.id=234
 
-python app.py
+python app-grafana-otel.py
+```
+
+### Run with Azure AI Foundry (Option C)
+
+```bash
+# Azure AI Foundry
+export AZURE_AI_FOUNDRY_ENDPOINT="https://<hub>.services.ai.azure.com/models"
+export AZURE_AI_FOUNDRY_API_KEY="<APIKEY>"
+export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o-mini"
+
+# Application Insights tracing
+export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=<key>;IngestionEndpoint=https://<region>.in.applicationinsights.azure.com/"
+export OTEL_SERVICE_NAME="foundry-langgraph-demo"
+
+# Optional: capture prompt/completion text in traces
+export AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED="true"
+
+python app-foundry-otel.py
 ```
 
 ## Environment Variables Reference
+
+### Azure OpenAI (used by `app.py` and `app-grafana-otel.py`)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -129,9 +200,25 @@ python app.py
 | `AZURE_OPENAI_DEPLOYMENT_NAME` | Model deployment name | `gpt-5-mini` |
 | `AZURE_OPENAI_API_VERSION` | API version | `2024-12-01-preview` |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL | `https://<APIMENDPOINT>.azure-api.net` |
+
+### OpenTelemetry (used by `app.py` and `app-grafana-otel.py`)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | `http://localhost:4318` |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP protocol | `http/protobuf` |
 | `OTEL_EXPORTER_OTLP_HEADERS` | OTLP headers for authentication | `Authorization=Basic%20<base64>` |
 | `OTEL_SERVICE_NAME` | Service name for traces | `otel-langgraph-demo` |
-| `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED` | Enable auto logging instrumentation | `true` | 
+| `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED` | Enable auto logging instrumentation | `true` |
 | `OTEL_RESOURCE_ATTRIBUTES` | Resource attributes for traces | `deployment.environment=dev,service.namespace=demo,service.version=1,service.instance.id=234` |
+
+### Azure AI Foundry (used by `app-foundry-otel.py`)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights connection string from your Azure AI Foundry project | `InstrumentationKey=<key>;IngestionEndpoint=https://...` |
+| `AZURE_AI_FOUNDRY_ENDPOINT` | Azure AI Foundry model endpoint | `https://<hub>.services.ai.azure.com/models` |
+| `AZURE_AI_FOUNDRY_API_KEY` | Azure AI Foundry API key | `abc123...` |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Model deployment name | `gpt-4o-mini` |
+| `OTEL_SERVICE_NAME` | Service name for traces | `foundry-langgraph-demo` |
+| `AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED` | Enable prompt/completion text recording in traces | `true` |
