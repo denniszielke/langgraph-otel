@@ -113,9 +113,12 @@ See: https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-
 ```bash
 APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=<key>;IngestionEndpoint=https://<region>.in.applicationinsights.azure.com/"
 AZURE_AI_FOUNDRY_ENDPOINT="https://<hub>.services.ai.azure.com/models"
-AZURE_AI_FOUNDRY_API_KEY="your-foundry-api-key"
 AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o-mini"
 OTEL_SERVICE_NAME="foundry-langgraph-demo"
+
+# Authentication (choose one):
+AZURE_AI_FOUNDRY_API_KEY="your-foundry-api-key"  # Option 1: API key
+# Or omit AZURE_AI_FOUNDRY_API_KEY to use DefaultAzureCredential (Option 2: keyless)
 ```
 
 **Optional:** To capture prompt and completion text in traces (useful for debugging):
@@ -177,8 +180,10 @@ python app-grafana-otel.py
 ```bash
 # Azure AI Foundry
 export AZURE_AI_FOUNDRY_ENDPOINT="https://<hub>.services.ai.azure.com/models"
-export AZURE_AI_FOUNDRY_API_KEY="<APIKEY>"
 export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o-mini"
+
+# Authentication: set API key, or omit to use DefaultAzureCredential
+export AZURE_AI_FOUNDRY_API_KEY="<APIKEY>"
 
 # Application Insights tracing
 export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=<key>;IngestionEndpoint=https://<region>.in.applicationinsights.azure.com/"
@@ -218,7 +223,7 @@ python app-foundry-otel.py
 |----------|-------------|---------|
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights connection string from your Azure AI Foundry project | `InstrumentationKey=<key>;IngestionEndpoint=https://...` |
 | `AZURE_AI_FOUNDRY_ENDPOINT` | Azure AI Foundry model endpoint | `https://<hub>.services.ai.azure.com/models` |
-| `AZURE_AI_FOUNDRY_API_KEY` | Azure AI Foundry API key | `abc123...` |
+| `AZURE_AI_FOUNDRY_API_KEY` | Azure AI Foundry API key (optional — omit to use `DefaultAzureCredential`) | `abc123...` |
 | `AZURE_OPENAI_DEPLOYMENT_NAME` | Model deployment name | `gpt-4o-mini` |
 | `OTEL_SERVICE_NAME` | Service name for traces | `foundry-langgraph-demo` |
 | `AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED` | Enable prompt/completion text recording in traces | `true` |

@@ -32,6 +32,9 @@ from azure.ai.inference.tracing import AIInferenceInstrumentor
 # langchain-azure-ai: Azure AI Foundry-native LangChain chat model
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
+# azure-identity: DefaultAzureCredential for keyless authentication
+from azure.identity import DefaultAzureCredential
+
 logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -48,9 +51,9 @@ def get_logger(module_name):
 #                                            from your Azure AI Foundry project
 # Required for the LLM:
 #   AZURE_AI_FOUNDRY_ENDPOINT              - e.g. https://<hub>.services.ai.azure.com/models
-#   AZURE_AI_FOUNDRY_API_KEY               - API key or use DefaultAzureCredential
 #   AZURE_OPENAI_DEPLOYMENT_NAME           - model deployment name
 # Optional:
+#   AZURE_AI_FOUNDRY_API_KEY               - API key (if omitted, uses DefaultAzureCredential)
 #   AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED - set to "true" to capture
 #                                                     prompt/completion text in traces
 # ---------------------------------------------------------------------------
@@ -64,9 +67,12 @@ if not azure_endpoint:
     logger.error("AZURE_AI_FOUNDRY_ENDPOINT environment variable is not set.")
     sys.exit(1)
 
-if not api_key:
-    logger.error("AZURE_AI_FOUNDRY_API_KEY environment variable is not set.")
-    sys.exit(1)
+# Use API key if provided, otherwise fall back to DefaultAzureCredential
+credential = api_key if api_key else DefaultAzureCredential()
+if api_key:
+    logger.info("Using API key authentication.")
+else:
+    logger.info("No API key provided. Using DefaultAzureCredential.")
 
 
 def setup_tracing():
@@ -119,7 +125,7 @@ tracer = setup_tracing()
 # ---------------------------------------------------------------------------
 llm = AzureAIChatCompletionsModel(
     endpoint=azure_endpoint,
-    credential=api_key,
+    credential=credential,
     model=azure_deployment,
 )
 
